@@ -1,0 +1,226 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tickets - Listagem</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <style>
+        /* Estilos do Index.html (Modo Claro) */
+        body {
+            background-color: #f8f9fa; 
+            color: #212529;
+        }
+        #sidebar-wrapper {
+            min-height: 100vh;
+            margin-left: -15rem;
+            transition: margin .25s ease-out;
+        }
+        #sidebar-wrapper .sidebar-heading {
+            padding: 0.875rem 1.25rem;
+            font-size: 1.2rem;
+        }
+        #sidebar-wrapper .list-group {
+            width: 15rem;
+        }
+        #page-content-wrapper {
+            min-width: 100vw;
+        }
+        @media (min-width: 768px) {
+            #sidebar-wrapper {
+                margin-left: 0;
+            }
+            #page-content-wrapper {
+                min-width: 0;
+                width: 100%;
+            }
+        }
+        /* Garantir que o texto nos cards seja escuro (legível) */
+        .card .card-header, .card .card-body {
+            color: #212529; 
+        }
+    </style>
+</head>
+<body>
+
+<div class="d-flex" id="wrapper">
+    <div class="border-end bg-white" id="sidebar-wrapper">
+        <div class="sidebar-heading border-bottom bg-light">
+            Chamados
+        </div>
+        <div class="list-group list-group-flush">
+            <a href="{% url 'home' %}"
+                class="list-group-item list-group-item-action p-3 {% if request.path == '/' %}active{% endif %}"> Dashboard
+            </a>
+            <a href="{% url 'tickets_abertos' %}"
+                class="list-group-item list-group-item-action p-3 {% if request.path == '/tickets_abertos/' %}active{% endif %}">
+                </i> Tickets Abertos <span class="badge bg-danger ms-1">{{ contador.abertos|default:0 }}</span>
+            </a>
+            <a href="{% url 'abertura_chamado' %}"
+                class="list-group-item list-group-item-action p-3 {% if request.path == '/chamado/abrir/' %}active{% endif %}">
+                </i> Abrir Chamado
+            </a>
+        </div>
+    </div>
+    
+    <div id="page-content-wrapper">
+        
+        <nav>
+            <div class="container-fluid">
+                <button class="btn btn-primary d-md-none" id="sidebarToggle">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    </div>
+            </div>
+        </nav>
+        
+        <div class="container-fluid p-4">
+            
+            <h1 class="mt-4 mb-4 text-dark">
+                {% if ver_fechados_ativo == 'apenas_fechados' %}
+                    Tickets Fechados
+                {% else %}
+                    Tickets Abertos
+                {% endif %}
+            </h1>
+            
+            <div class="mb-4 d-flex align-items-center flex-wrap">
+                
+                <a href="{% url 'tickets_abertos' %}?filtro=todos&ver_fechados=nao" 
+                   class="btn {% if ver_fechados_ativo != 'apenas_fechados' %}btn-primary{% else %}btn-outline-primary{% endif %} me-2 mb-2">
+                    <i class="bi bi-list-task me-1"></i> Abertos
+                </a>
+                
+                <a href="{% url 'tickets_abertos' %}?filtro=todos&ver_fechados=apenas_fechados" 
+                   class="btn {% if ver_fechados_ativo == 'apenas_fechados' %}btn-success{% else %}btn-outline-success{% endif %} me-4 mb-2">
+                    <i class="bi bi-check2-circle me-1"></i> Fechados
+                </a>
+
+                <span class="vr mx-2"></span>
+
+                {% if ver_fechados_ativo != 'apenas_fechados' %}
+                    <a href="{% url 'tickets_abertos' %}?filtro=novo&ver_fechados=nao" 
+                       class="btn {% if filtro_ativo == 'novo' %}btn-warning{% else %}btn-outline-warning{% endif %} me-2 mb-2">
+                        <i class="bi bi-plus-circle me-1"></i> Novos
+                    </a>
+
+                    <a href="{% url 'tickets_abertos' %}?filtro=pendente&ver_fechados=nao" 
+                       class="btn {% if filtro_ativo == 'pendente' %}btn-danger{% else %}btn-outline-danger{% endif %} me-2 mb-2">
+                        <i class="bi bi-clock me-1"></i> Pendentes
+                    </a>
+                    
+                    <a href="{% url 'tickets_abertos' %}?filtro=andamento&ver_fechados=nao" 
+                        class="btn {% if filtro_ativo == 'andamento' %}btn-info{% else %}btn-outline-info{% endif %} mb-2">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Em Atendimento
+                    </a>
+                {% endif %}
+
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow-lg mb-4 text-dark">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-list-task me-2"></i> 
+                                {% if ver_fechados_ativo == 'apenas_fechados' %}
+                                    Chamados Fechados
+                                {% elif filtro_ativo == 'novo' %}
+                                    Chamados Novos
+                                {% elif filtro_ativo == 'pendente' %}
+                                    Chamados Pendentes
+                                {% elif filtro_ativo == 'andamento' %}
+                                    Chamados em Atendimento
+                                {% else %}
+                                    Lista de Chamados Abertos
+                                {% endif %}
+                                <small>({{ chamados|length }} encontrados)</small>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Assunto</th>
+                                            <th>Empresa</th> 
+                                            <th>Status</th>
+                                            <th>Prioridade</th>
+                                            <th>Data Abertura</th>
+                                            <th>Técnico</th>
+                                            <th>Ação</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for chamado in chamados %}
+                                        <tr>
+                                            <td><a href="{% url 'detalhe_ticket' chamado.id %}">{{ chamado.id }}</a></td> 
+                                            <td>{{ chamado.assunto }}</td>
+                                            <td>{{ chamado.empresa }}</td> 
+                                            <td>
+                                                {% if chamado.status == 'NOVO' %}
+                                                    <span class="badge bg-warning text-dark">{{ chamado.get_status_display }}</span>
+                                                {% elif chamado.status == 'ANDAMENTO' %}
+                                                    <span class="badge bg-info text-dark">{{ chamado.get_status_display }}</span>
+                                                {% elif chamado.status == 'PENDENTE' %}
+                                                    <span class="badge bg-danger">{{ chamado.get_status_display }}</span>
+                                                {% elif chamado.status == 'FECHADO' %}
+                                                    <span class="badge bg-success">{{ chamado.get_status_display }}</span>
+                                                {% else %}
+                                                     <span class="badge bg-secondary">{{ chamado.get_status_display }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="fw-bold 
+                                                     {% if chamado.prioridade == 'CRITICA' %}text-danger fs-6
+                                                     {% elif chamado.prioridade == 'ALTA' %}text-danger
+                                                     {% elif chamado.prioridade == 'MEDIA' %}text-warning
+                                                     {% else %}text-success
+                                                     {% endif %}">
+                                                     {{ chamado.get_prioridade_display|upper }}
+                                                 </span>
+                                            </td>
+                                            <td>{{ chamado.data_abertura|date:"d/m/Y H:i" }}</td>
+                                            
+                                            <td>
+                                                {% if chamado.tecnico_responsavel %}
+                                                    {{ chamado.tecnico_responsavel.get_full_name|default:chamado.tecnico_responsavel.username }}
+                                                {% else %}
+                                                    Não Atribuído
+                                                {% endif %}
+                                            </td>
+                                            <td><a href="{% url 'detalhe_ticket' chamado.id %}" class="btn btn-sm btn-info text-white">Ver</a></td> 
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="8" class="text-center py-4">
+                                                <i class="bi bi-check-circle me-1"></i> Nenhum chamado encontrado com o filtro atual.
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.getElementById('sidebarToggle').addEventListener('click', function() {
+        var wrapper = document.getElementById('wrapper');
+        wrapper.classList.toggle('toggled');
+    });
+</script>
+
+</body>
+</html>
